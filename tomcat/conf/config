@@ -1,0 +1,3 @@
+CATALINA_OPTS="$CATALINA_OPTS -Djava.security.auth.login.config=/usr/local/tomcat/conf/jaas.conf"
+CATALINA_OPTS="$CATALINA_OPTS -Djava.security.krb5.conf=/usr/local/tomcat/conf/krb5.conf"
+CATALINA_OPTS="$CATALINA_OPTS -Djavax.security.auth.useSubjectCredsOnly=false"

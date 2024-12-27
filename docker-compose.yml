@@ -1,0 +1,70 @@
+version: '3.7'
+services:
+  ad-dc:
+    image: instantlinux/samba-dc
+    container_name: samba-ad-dc
+    secrets:
+      - admin_pass_secret
+    environment:
+      DOMAIN: HAVAZ
+      REALM: HAVAZ.LOCAL
+      DNS_FORWARDER: 8.8.8.8
+      #ADMIN_PASSWORD: "somethingsecret"
+      ADMIN_PASSWORD_SECRET: admin_pass_secret
+    volumes:
+      - ad_data:/var/lib/samba
+      - ad_etc:/etc/samba/external
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "88:88/tcp"
+      - "88:88/udp"
+      - "135:135/tcp"
+      - "137:137/udp"
+      - "138:138/udp"
+      - "139:139/tcp"
+      - "389:389/tcp"
+      # - "445:445/tcp"
+      - "464:464/tcp"
+      - "464:464/udp"
+      - "636:636/tcp"
+      - "3268:3268/tcp"
+      - "3269:3269/tcp"
+    restart: unless-stopped
+
+  tomcat-sso:
+    image: tomcat:9-jdk11
+    container_name: tomcat-sso
+    depends_on:
+      - ad-dc
+    environment:
+      # Point to your KDC if you don't rely on DNS lookups
+      KRB5_KDC: samba-ad-dc
+    volumes:
+      - ./conf/krb5.conf:/usr/local/tomcat/conf/krb5.conf
+      - ./conf/jaas.conf:/usr/local/tomcat/conf/jaas.conf
+      - ./conf/tomcat-svc.keytab:/usr/local/tomcat/conf/tomcat-svc.keytab
+      - ./webapps:/usr/local/tomcat/webapps
+    ports:
+      - "8081:8080"
+    command: >
+      bash -c "
+        export CATALINA_OPTS='
+          -Djava.security.auth.login.config=/usr/local/tomcat/conf/jaas.conf
+          -Djava.security.krb5.conf=/usr/local/tomcat/conf/krb5.conf
+          -Djavax.security.auth.useSubjectCredsOnly=false
+        ';
+        catalina.sh run
+      "
+    restart: unless-stopped
+
+volumes:
+  ad_data:
+  ad_etc:
+
+
+secrets:
+  admin_pass_secret:
+    file: ./admin_pass_secret.txt
+
+

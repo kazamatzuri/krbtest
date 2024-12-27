@@ -1,0 +1,3 @@
+<Valve className="org.apache.catalina.authenticator.SpnegoAuthenticator" 
+       preferredMechTypes="Kerberos" 
+       allowGuestLogin="false" />
